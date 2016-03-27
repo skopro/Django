@@ -21,7 +21,7 @@ def create_question(question_text="test question", days=0):
     return q
 
 
-def create_question_noChoice(question_text="test question", days=0):
+def create_question_no_choice(question_text="test question", days=0):
     """
     this question hasn't any choice
     """
@@ -84,7 +84,7 @@ class QuestionViewTests(TestCase):
         """
         It's silly that Questions can be published on the site that have no Choices
         """
-        create_question_noChoice()
+        create_question_no_choice()
         response = self.client.get(reverse('polls:index'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No polls are available.")
@@ -110,11 +110,11 @@ class QuestionIndexDetailTests(TestCase):
         response = self.client.get(reverse('polls:detail', args=(past_question.id,)))
         self.assertContains(response, past_question.question_text, status_code=200)
 
-    def test_index_view_with_no_choices_question(self):
+    def test_detail_view_with_no_choices_question(self):
         """
         It's silly that Questions can be published on the site that have no Choices
         """
-        no_choices_question = create_question_noChoice()
+        no_choices_question = create_question_no_choice()
         response = self.client.get(reverse('polls:detail', args=(no_choices_question.id,)))
         self.assertEqual(response.status_code, 404)
 
@@ -138,10 +138,10 @@ class QuestionResultsTests(TestCase):
         response = self.client.get(reverse('polls:results', args=(past_question.id,)))
         self.assertContains(response, past_question.question_text, status_code=200)
 
-    def test_index_view_with_no_choices_question(self):
+    def test_result_view_with_no_choices_question(self):
         """
         It's silly that Questions can be published on the site that have no Choices
         """
-        no_choices_question = create_question_noChoice()
+        no_choices_question = create_question_no_choice()
         response = self.client.get(reverse('polls:results', args=(no_choices_question.id,)))
         self.assertEqual(response.status_code, 404)
