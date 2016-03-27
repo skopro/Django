@@ -4,15 +4,26 @@ import datetime
 from django.utils import timezone
 from django.test import TestCase
 
-from .models import Question
+from .models import Question, Choice
 from django.core.urlresolvers import reverse
 
 
-def create_question(question_text, days):
+def create_question(question_text="test question", days=0):
     """
     Creates a question with the given 'question_text' and published the
     given number of 'days' offset to now (negative for questions published
     in the past, positive for questions that have yet to be published).
+    """
+
+    time = timezone.now() + datetime.timedelta(days=days)
+    q = Question.objects.create(question_text=question_text, pub_date=time)
+    Choice.objects.create(question=q, choice_text="choice")
+    return q
+
+
+def create_question_noChoice(question_text="test question", days=0):
+    """
+    this question hasn't any choice
     """
 
     time = timezone.now() + datetime.timedelta(days=days)
@@ -69,6 +80,16 @@ class QuestionViewTests(TestCase):
         self.assertQuerysetEqual(response.context['latest_question_list'],
                                  ['<Question: Past question 2.>', '<Question: Past question 1.>'])
 
+    def test_index_view_with_no_choices_question(self):
+        """
+        It's silly that Questions can be published on the site that have no Choices
+        """
+        create_question_noChoice()
+        response = self.client.get(reverse('polls:index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No polls are available.")
+        self.assertQuerysetEqual(response.context['latest_question_list'], [])
+
 
 class QuestionIndexDetailTests(TestCase):
     def test_detail_view_with_a_future_question(self):
@@ -89,6 +110,14 @@ class QuestionIndexDetailTests(TestCase):
         response = self.client.get(reverse('polls:detail', args=(past_question.id,)))
         self.assertContains(response, past_question.question_text, status_code=200)
 
+    def test_index_view_with_no_choices_question(self):
+        """
+        It's silly that Questions can be published on the site that have no Choices
+        """
+        no_choices_question = create_question_noChoice()
+        response = self.client.get(reverse('polls:detail', args=(no_choices_question.id,)))
+        self.assertEqual(response.status_code, 404)
+
 
 class QuestionResultsTests(TestCase):
     def test_result_view_with_a_future_question(self):
@@ -108,3 +137,11 @@ class QuestionResultsTests(TestCase):
         past_question = create_question(question_text='Past Question.', days=-5)
         response = self.client.get(reverse('polls:results', args=(past_question.id,)))
         self.assertContains(response, past_question.question_text, status_code=200)
+
+    def test_index_view_with_no_choices_question(self):
+        """
+        It's silly that Questions can be published on the site that have no Choices
+        """
+        no_choices_question = create_question_noChoice()
+        response = self.client.get(reverse('polls:results', args=(no_choices_question.id,)))
+        self.assertEqual(response.status_code, 404)
